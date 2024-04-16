@@ -9,52 +9,56 @@
 ----------------------------------------------------------------------------------------------------------------------------------------
 local AddonInfo = {
   addon = "BagSpaceIndicator",
-  version = "3.39",
+  version = "42.0",
   author = "Lord Richter",
   savename = "BagSpaceIndicatorVars"
 }
 
-local BSI = {}
-local BSIUI = {}
+----------------------------------------------------------------------------------------------------------------------------------------
+-- Addon configuration
+----------------------------------------------------------------------------------------------------------------------------------------
 
-BSI.addonready = 0
-BSI.upgrade1 = false
-BSI.firsttime = false
-BSI.updated = 0
-BSI.debug = "Uninitialized"
-BSI.message = ""
-BSI.bankfree = "" 
-BSI.invfree = ""
-BSI.savedvariables = {}
-BSI.default = { 
-	offsetX = 0,
-	offsetY = 20
+local BSI = {
+  addonready = 0,
+  upgrade1 = false,
+  firsttime = false,
+  updated = 0,
+  debug = "Uninitialized",
+  message = "",
+  bankfree = "", 
+  invfree = "",
+  savedvariables = {},
+  default = { 
+    offsetX = 0,
+    offsetY = 20
+  }
 }
 
-BSIUI.windowmgr = GetWindowManager()
-BSIUI.topwindow = nil
-BSIUI.backdrop = nil
-BSIUI.line1 = nil
-BSIUI.line2 = nil
-BSIUI.line3 = nil
-BSIUI.label1 = nil
-BSIUI.label2 = nil
-BSIUI.label3 = nil
-BSIUI.icon1 = nil
-BSIUI.icon2 = nil
-BSIUI.icon3 = nil
-BSIUI.backgroundalpha=0.80
 
--- define some colors for commonality
-BSIUI.Color = {}
-BSIUI.Color.white = "|cffffff"
-BSIUI.Color.red = "|cff0000"
-BSIUI.Color.yellow = "|cffff00"
-BSIUI.Color.gold = "|cffd700"
-BSIUI.Color.gray = "|c7f7f7f"
-BSIUI.Color.cream = "|cffffcc"
+local BSIUI = {
+  windowmgr = GetWindowManager(),
+  topwindow = nil,
+  backdrop = nil,
+  line1 = nil,
+  line2 = nil,
+  line3 = nil,
+  label1 = nil,
+  label2 = nil,
+  label3 = nil,
+  icon1 = nil,
+  icon2 = nil,
+  icon3 = nil,
+  backgroundalpha=0.80,
+  Color = {
+    white = "|cffffff",
+    red = "|cff0000",
+    yellow = "|cffff00",
+    gold = "|cffd700",
+    gray = "|c7f7f7f",
+    cream = "|cffffcc"
+  }
+}
 
--- ZOS API References
 local GetBagSize = GetBagSize
 local GetNumBagUsedSlots = GetNumBagUsedSlots
 local GetNumBagFreeSlots = GetNumBagFreeSlots
@@ -62,9 +66,10 @@ local GetBagUseableSize = GetBagUseableSize
 local GetCurrentMoney = GetCurrentMoney
 local GetFrameTimeMilliseconds = GetFrameTimeMilliseconds
 
-local delay = {
-	last = nil
-}
+
+----------------------------------------------------------------------------------------------------------------------------------------
+-- Utility 
+----------------------------------------------------------------------------------------------------------------------------------------
 
 local template_bagdata = {
 	bag=0,
@@ -72,6 +77,7 @@ local template_bagdata = {
 	used=0,
 	available=0
 }
+
 
 local function initializeTable(template)
   local t2 = {}
@@ -81,6 +87,10 @@ local function initializeTable(template)
   end
   return t2 
 end
+
+----------------------------------------------------------------------------------------------------------------------------------------
+-- UI handlers
+----------------------------------------------------------------------------------------------------------------------------------------
 
 function BSIUpdate()
 	if BSI.updated then
@@ -101,153 +111,17 @@ local function OnMoveStop(self)
   BSI.savedvariables.offsetY = self:GetTop()
 end
 
-local function LoadAddon(eventCode, addOnName)
-	if(addOnName == AddonInfo.addon) then
-		local labelheight = 25
-		local labelwidth = 80
-		BSI.normal = initializeTable(template_bagdata)
-		BSI.bank = initializeTable(template_bagdata)
-		BSI.subscriber = initializeTable(template_bagdata)
-		-- adjust the default offset based on screen size
-		local screenwidth = GuiRoot:GetWidth()
-		BSI.default.offsetX = screenwidth*0.2
-		BSI.savedvariables = ZO_SavedVars:New(AddonInfo.savename,1,nil,BSI.default)
-		-- upgrade and repair saved variables  
-		if BSI.savedvariables.offsetX==nil then
-		  BSI.savedvariables.offsetX = BSI.defaults.offsetX
-		  BSI.upgrade1 = true
-		end
-		
-		if BSI.savedvariables.offsetY==nil then
-			BSI.savedvariables.offsetY = BSI.defaults.offsetY
-			BSI.upgrade1 = true
-		end
-    
-		if BSI.savedvariables.ishidden==nil then
-			BSI.savedvariables.ishidden = false
-			BSI.upgrade1 = true
-			BSI.firsttime = true
-		end
-    
-		if BSI.savedvariables.displaywindow then
-			BSI.savedvariables.displaywindow = nil
-		end
-		
-		BSI.savedvariables.addonversion = AddonInfo.version
-		if (LibNorthCastle) then LibNorthCastle:Register(AddonInfo.addon,AddonInfo.version) end
-		
-		-- create the floating information window
-		local windowcfg
-		BSIUI.topwindow = BSIUI.windowmgr:CreateTopLevelWindow("BagSpaceIndicatorFloat")
-		windowcfg = BSIUI.topwindow
-		windowcfg:SetClampedToScreen(true)
-		windowcfg:SetMouseEnabled(true) 
-		windowcfg:SetResizeToFitDescendents(true)
-		windowcfg:SetAnchor(TOPLEFT, GuiRoot, TOPLEFT, BSI.savedvariables.offsetX, BSI.savedvariables.offsetY)
-		windowcfg:SetHidden(BSI.savedvariables.ishidden)
-		windowcfg:SetMovable(true)
-		windowcfg:SetHandler("OnMoveStop", OnMoveStop)
-		
-		BSIUI.backdrop = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatBG", BSIUI.topwindow, CT_BACKDROP)
-		windowcfg = BSIUI.backdrop
-		windowcfg:SetHidden(false)
-		windowcfg:SetClampedToScreen(false)
-		windowcfg:SetAnchor(TOPLEFT, BSIUI.topwindow, TOPLEFT, 0, 0)
-		windowcfg:SetResizeToFitDescendents(true)
-		windowcfg:SetResizeToFitPadding(32,16)
-		windowcfg:SetDimensionConstraints(labelwidth,labelheight*3)
-		windowcfg:SetInsets (16,16,-16,-16)
-		windowcfg:SetEdgeTexture("EsoUI/Art/ChatWindow/chat_BG_edge.dds", 256, 256, 16)
-		windowcfg:SetCenterTexture("EsoUI/Art/ChatWindow/chat_BG_center.dds")
-		windowcfg:SetAlpha(BSIUI.backgroundalpha)
-		windowcfg:SetDrawLayer(0)
-    
-		BSIUI.infobox = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatBox", BSIUI.backdrop, CT_CONTROL)
-		windowcfg = BSIUI.infobox
-		windowcfg:SetAnchor(TOPLEFT, BSIUI.backdrop, TOPLEFT, 16, 16)
-  		
-		-- gold
-		BSIUI.line1 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLine1", BSIUI.infobox, CT_CONTROL)
-		windowcfg = BSIUI.line1
-		windowcfg:SetAnchor(TOPLEFT, BSIUI.infobox, TOPLEFT, 0, 0)
+----------------------------------------------------------------------------------------------------------------------------------------
+-- Event handlers
+----------------------------------------------------------------------------------------------------------------------------------------
 
-		BSIUI.icon1 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatIcon1", BSIUI.line1, CT_TEXTURE)
-		windowcfg = BSIUI.icon1
-		windowcfg:SetDimensions(labelheight*0.75,labelheight*0.75)
-		windowcfg:SetAnchor(LEFT, BSIUI.line1, LEFT, labelheight*.2, labelheight*.1)
-		windowcfg:SetTexture("/esoui/art/currency/currency_gold.dds")
-
-		BSIUI.label1 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLabel1", BSIUI.line1, CT_LABEL)
-		windowcfg = BSIUI.label1
-		windowcfg:SetColor(0.8, 0.8, 0.8, 1)
-		windowcfg:SetFont("ZoFontGameMedium")
-		windowcfg:SetWrapMode(TEX_MODE_CLAMP)
-		windowcfg:SetText("")
-		windowcfg:SetAnchor(LEFT, BSIUI.icon1, RIGHT, 8, 1)
-		windowcfg:SetDimensions(labelwidth,labelheight)
-    
-		-- bags
-		BSIUI.line2 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLine2", BSIUI.infobox, CT_CONTROL)
-		windowcfg = BSIUI.line2
-		windowcfg:SetAnchor(TOPLEFT, BSIUI.infobox, TOPLEFT, 0, labelheight)
-	
-		BSIUI.icon2 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatIcon2", BSIUI.line2, CT_TEXTURE)
-		windowcfg = BSIUI.icon2
-		windowcfg:SetDimensions(labelheight,labelheight)
-		windowcfg:SetAnchor(LEFT, BSIUI.line2, LEFT, 0, 0)
-		windowcfg:SetTexture("/esoui/art/tooltips/icon_bag.dds")
-    
-		BSIUI.label2 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLabel2", BSIUI.line2, CT_LABEL)
-		windowcfg = BSIUI.label2
-		windowcfg:SetColor(0.8, 0.8, 0.8, 1)
-		windowcfg:SetFont("ZoFontGameMedium")
-		windowcfg:SetWrapMode(TEX_MODE_CLAMP)
-		windowcfg:SetText("")
-		windowcfg:SetAnchor(LEFT, BSIUI.icon2, RIGHT, 5, 1)
-		windowcfg:SetDimensions(labelwidth,labelheight)
-    
-		--bank
-		BSIUI.line3 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLine3", BSIUI.infobox, CT_CONTROL)
-		windowcfg = BSIUI.line3
-		windowcfg:SetAnchor(TOPLEFT, BSIUI.infobox, TOPLEFT, 0, (labelheight*2))
-	
-		BSIUI.icon3 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatIcon3", BSIUI.line3, CT_TEXTURE)
-		windowcfg = BSIUI.icon3
-		windowcfg:SetDimensions(labelheight,labelheight)
-		windowcfg:SetAnchor(LEFT, BSIUI.line3, LEFT, 0, 0)
-		windowcfg:SetTexture("/esoui/art/tooltips/icon_bank.dds")
-    
-		BSIUI.label3 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLabel3", BSIUI.line3, CT_LABEL)
-		windowcfg = BSIUI.label3
-		windowcfg:SetColor(0.8, 0.8, 0.8, 1)
-		windowcfg:SetFont("ZoFontGameMedium")
-		windowcfg:SetWrapMode(TEX_MODE_CLAMP)
-		windowcfg:SetText("")
-		windowcfg:SetAnchor(LEFT, BSIUI.icon3, RIGHT, 5, 1)
-		windowcfg:SetDimensions(labelwidth,labelheight)
-
-		UpdateBSIData()
-		
-		if (BSI.goldamount < 10000000) then BagSpaceIndicatorFloatLabel1:SetFont("ZoFontGameMedium") 
-		else BagSpaceIndicatorFloatLabel1:SetFont("ZoFontGameSmall") end
-		
-		BagSpaceIndicatorFloatLabel1:SetText(BSI.floatgold)
-		BagSpaceIndicatorFloatLabel2:SetText(BSI.floatbag)
-		BagSpaceIndicatorFloatLabel3:SetText(BSI.floatbank)
-							
-		EVENT_MANAGER:UnregisterForEvent(AddonInfo.addon, EVENT_ADD_ON_LOADED)
-		
-		BSI.addonready = 1	
-	end	
-end
-
-function BSIOpenBank(eventCode)
+function BSIOpenBankEvent(eventCode)
 	if (BSI.addonready == 0) then return end
 	BSI.updated=1
 	postBagInformation()
 end
 
-function BSICloseBank(eventCode)
+function BSICloseBankEvent(eventCode)
   if (BSI.addonready == 0) then return end
   BSI.updated=1
   postBagInformation()
@@ -272,10 +146,106 @@ function BSIMoneyEvent(eventCode, eventData)
   postBagInformation()
 end 
 
+----------------------------------------------------------------------------------------------------------------------------------------
+-- Bag Space Window
+----------------------------------------------------------------------------------------------------------------------------------------
+function FloatingWindowInit()
+    -- create the floating information window
+    local windowcfg
+    BSIUI.topwindow = BSIUI.windowmgr:CreateTopLevelWindow("BagSpaceIndicatorFloat")
+    windowcfg = BSIUI.topwindow
+    windowcfg:SetClampedToScreen(true)
+    windowcfg:SetMouseEnabled(true) 
+    windowcfg:SetResizeToFitDescendents(true)
+    windowcfg:SetAnchor(TOPLEFT, GuiRoot, TOPLEFT, BSI.savedvariables.offsetX, BSI.savedvariables.offsetY)
+    windowcfg:SetHidden(BSI.savedvariables.ishidden)
+    windowcfg:SetMovable(true)
+    windowcfg:SetHandler("OnMoveStop", OnMoveStop)
+    
+    BSIUI.backdrop = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatBG", BSIUI.topwindow, CT_BACKDROP)
+    windowcfg = BSIUI.backdrop
+    windowcfg:SetHidden(false)
+    windowcfg:SetClampedToScreen(false)
+    windowcfg:SetAnchor(TOPLEFT, BSIUI.topwindow, TOPLEFT, 0, 0)
+    windowcfg:SetResizeToFitDescendents(true)
+    windowcfg:SetResizeToFitPadding(32,16)
+    windowcfg:SetDimensionConstraints(labelwidth,labelheight*3)
+    windowcfg:SetInsets (16,16,-16,-16)
+    windowcfg:SetEdgeTexture("EsoUI/Art/ChatWindow/chat_BG_edge.dds", 256, 256, 16)
+    windowcfg:SetCenterTexture("EsoUI/Art/ChatWindow/chat_BG_center.dds")
+    windowcfg:SetAlpha(BSIUI.backgroundalpha)
+    windowcfg:SetDrawLayer(0)
+    
+    BSIUI.infobox = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatBox", BSIUI.backdrop, CT_CONTROL)
+    windowcfg = BSIUI.infobox
+    windowcfg:SetAnchor(TOPLEFT, BSIUI.backdrop, TOPLEFT, 16, 16)
+      
+    -- gold
+    BSIUI.line1 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLine1", BSIUI.infobox, CT_CONTROL)
+    windowcfg = BSIUI.line1
+    windowcfg:SetAnchor(TOPLEFT, BSIUI.infobox, TOPLEFT, 0, 0)
+
+    BSIUI.icon1 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatIcon1", BSIUI.line1, CT_TEXTURE)
+    windowcfg = BSIUI.icon1
+    windowcfg:SetDimensions(labelheight*0.75,labelheight*0.75)
+    windowcfg:SetAnchor(LEFT, BSIUI.line1, LEFT, labelheight*.2, labelheight*.1)
+    windowcfg:SetTexture("/esoui/art/currency/currency_gold.dds")
+
+    BSIUI.label1 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLabel1", BSIUI.line1, CT_LABEL)
+    windowcfg = BSIUI.label1
+    windowcfg:SetColor(0.8, 0.8, 0.8, 1)
+    windowcfg:SetFont("ZoFontGameMedium")
+    windowcfg:SetWrapMode(TEX_MODE_CLAMP)
+    windowcfg:SetText("")
+    windowcfg:SetAnchor(LEFT, BSIUI.icon1, RIGHT, 8, 1)
+    windowcfg:SetDimensions(labelwidth,labelheight)
+    
+    -- bags
+    BSIUI.line2 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLine2", BSIUI.infobox, CT_CONTROL)
+    windowcfg = BSIUI.line2
+    windowcfg:SetAnchor(TOPLEFT, BSIUI.infobox, TOPLEFT, 0, labelheight)
+  
+    BSIUI.icon2 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatIcon2", BSIUI.line2, CT_TEXTURE)
+    windowcfg = BSIUI.icon2
+    windowcfg:SetDimensions(labelheight,labelheight)
+    windowcfg:SetAnchor(LEFT, BSIUI.line2, LEFT, 0, 0)
+    windowcfg:SetTexture("/esoui/art/tooltips/icon_bag.dds")
+    
+    BSIUI.label2 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLabel2", BSIUI.line2, CT_LABEL)
+    windowcfg = BSIUI.label2
+    windowcfg:SetColor(0.8, 0.8, 0.8, 1)
+    windowcfg:SetFont("ZoFontGameMedium")
+    windowcfg:SetWrapMode(TEX_MODE_CLAMP)
+    windowcfg:SetText("")
+    windowcfg:SetAnchor(LEFT, BSIUI.icon2, RIGHT, 5, 1)
+    windowcfg:SetDimensions(labelwidth,labelheight)
+    
+    --bank
+    BSIUI.line3 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLine3", BSIUI.infobox, CT_CONTROL)
+    windowcfg = BSIUI.line3
+    windowcfg:SetAnchor(TOPLEFT, BSIUI.infobox, TOPLEFT, 0, (labelheight*2))
+  
+    BSIUI.icon3 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatIcon3", BSIUI.line3, CT_TEXTURE)
+    windowcfg = BSIUI.icon3
+    windowcfg:SetDimensions(labelheight,labelheight)
+    windowcfg:SetAnchor(LEFT, BSIUI.line3, LEFT, 0, 0)
+    windowcfg:SetTexture("/esoui/art/tooltips/icon_bank.dds")
+    
+    BSIUI.label3 = BSIUI.windowmgr:CreateControl("BagSpaceIndicatorFloatLabel3", BSIUI.line3, CT_LABEL)
+    windowcfg = BSIUI.label3
+    windowcfg:SetColor(0.8, 0.8, 0.8, 1)
+    windowcfg:SetFont("ZoFontGameMedium")
+    windowcfg:SetWrapMode(TEX_MODE_CLAMP)
+    windowcfg:SetText("")
+    windowcfg:SetAnchor(LEFT, BSIUI.icon3, RIGHT, 5, 1)
+    windowcfg:SetDimensions(labelwidth,labelheight)
+end
+
 
 function postBagInformation()
 	UpdateBSIData()
 	
+	-- adjust font for rich people
 	if (BSI.goldamount < 10000000) then BagSpaceIndicatorFloatLabel1:SetFont("ZoFontGameMedium") 
 	else BagSpaceIndicatorFloatLabel1:SetFont("ZoFontGameSmall") end
 	
@@ -285,9 +255,10 @@ function postBagInformation()
 end
 
 function postBankInformation()
-
+  -- unused
 end
 
+-- Get the current gold and free space
 function UpdateBSIData()
   -- h5. Bag
   --  * BAG_BACKPACK
@@ -303,7 +274,6 @@ function UpdateBSIData()
 	local subbankid = BAG_SUBSCRIBER_BANK
 	local guildbankid = BAG_GUILDBANK 
 	
-	-- local gold = GetCurrencyAmount(,CURRENCY_LOCATION_CHARACTER)
 	local gold = GetCurrentMoney()
 	local goldfmt = FormatIntegerWithDigitGrouping(gold,",",3);
 	
@@ -335,10 +305,12 @@ function UpdateBSIData()
 	local bankmax = BSI.bank.maximum + BSI.subscriber.usable
 	local bankused = BSI.bank.used + BSI.subscriber.used
 	
+	-- default text colors
 	local banksizewarning = BSIUI.Color.white
 	local guildsizewarning = BSIUI.Color.white
 	local bagsizewarning = BSIUI.Color.white
 	
+	-- new text colors based on free space remaining
 	if (BSI.normal.used==BSI.normal.maximum) then bagsizewarning = BSIUI.Color.red
 	elseif (BSI.normal.used>(BSI.normal.maximum-5)) then bagsizewarning = BSIUI.Color.yellow
 	end
@@ -356,41 +328,84 @@ function UpdateBSIData()
 	local bagline = bagsizewarning..BSI.normal.used.." / "..BSI.normal.maximum
 	local bankline = banksizewarning..bankused.." / "..bankmax
 
+  -- save detailed information
 	BSI.message = backpack..playerbank
 	BSI.bankfree = backpack..playerbank 
 	BSI.invfree = backpack
-	
-	BSI.floatgold = goldline
 	BSI.goldamount = gold
+	
+	-- save values displayed in floating window
+	BSI.floatgold = goldline
 	BSI.floatbag = bagline
 	BSI.floatbank = bankline
 	
 	BSI.updated = 1
-	return message
 end 
 
-function ThrashingDelay(timer)
-	local now = GetFrameTimeMilliseconds() 
-	if delay.last == nil then
-		delay.last = now 
-	end	
-	local diff = now - delay.last
-	local eval = (diff >= timer)
-	if eval then
-		delay.last = now 
-	end
-	return eval
+----------------------------------------------------------------------------------------------------------------------------------------
+-- Addon Init
+----------------------------------------------------------------------------------------------------------------------------------------
+
+local function LoadAddon(eventCode, addOnName)
+  if(addOnName == AddonInfo.addon) then
+    local labelheight = 25
+    local labelwidth = 80
+    BSI.normal = initializeTable(template_bagdata)
+    BSI.bank = initializeTable(template_bagdata)
+    BSI.subscriber = initializeTable(template_bagdata)
+    -- adjust the default offset based on screen size
+    local screenwidth = GuiRoot:GetWidth()
+    BSI.default.offsetX = screenwidth*0.2
+    BSI.savedvariables = ZO_SavedVars:New(AddonInfo.savename,1,nil,BSI.default)
+    -- upgrade and repair saved variables  
+    if BSI.savedvariables.offsetX==nil then
+      BSI.savedvariables.offsetX = BSI.defaults.offsetX
+      BSI.upgrade1 = true
+    end
+    
+    if BSI.savedvariables.offsetY==nil then
+      BSI.savedvariables.offsetY = BSI.defaults.offsetY
+      BSI.upgrade1 = true
+    end
+    
+    if BSI.savedvariables.ishidden==nil then
+      BSI.savedvariables.ishidden = false
+      BSI.upgrade1 = true
+      BSI.firsttime = true
+    end
+    
+    if BSI.savedvariables.displaywindow then
+      BSI.savedvariables.displaywindow = nil
+    end
+    
+    BSI.savedvariables.addonversion = AddonInfo.version
+    if (LibNorthCastle) then LibNorthCastle:Register(AddonInfo.addon,AddonInfo.version) end
+    
+    FloatingWindowInit()
+              
+    EVENT_MANAGER:UnregisterForEvent(AddonInfo.addon, EVENT_ADD_ON_LOADED)
+    
+    BSI.addonready = 1
+    
+    postBagInformation()
+      
+  end 
 end
 
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_ADD_ON_LOADED, LoadAddon)
+
+-- every 100ms check to see if window needs to be hidden
 EVENT_MANAGER:RegisterForUpdate("BSIHideCheck", 100, HideCheck)
+
+-- every 110ms check to see if the window needs to be updated
 EVENT_MANAGER:RegisterForUpdate("BSIUpdateCheck", 110, BSIUpdate)
 
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_ADD_ON_LOADED, LoadAddon)
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_OPEN_STORE, BSIOpenBank)
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_OPEN_BANK, BSIOpenBank)
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_CLOSE_BANK, BSICloseBank)
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_OPEN_GUILD_BANK, BSIOpenBank)
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_CLOSE_GUILD_BANK, BSICloseBank)
+-- intercept gold, bank, and inventory related events
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_OPEN_STORE, BSIOpenBankEvent)
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_OPEN_BANK, BSIOpenBankEvent)
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_CLOSE_BANK, BSICloseBankEvent)
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_OPEN_GUILD_BANK, BSIOpenBankEvent)
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_CLOSE_GUILD_BANK, BSICloseBankEvent)
 
 EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_INVENTORY_BAG_CAPACITY_CHANGED, BSIItemEvent)
 EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_INVENTORY_SINGLE_SLOT_UPDATE, BSIInventoryEvent)
@@ -405,7 +420,7 @@ EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_INVENTORY_BOUGHT_BANK_SPAC
 		
 EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_STABLE_INTERACT_END, BSIItemEvent)
 		
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_GUILD_BANKED_MONEY_UPDATE, BSIOpenBank)
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_GUILD_BANK_UPDATED_QUANTITY, BSIOpenBank)
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_GUILD_BANK_ITEMS_READY, BSIOpenBank)
-EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_GUILD_BANK_SELECTED, BSIOpenBank)
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_GUILD_BANKED_MONEY_UPDATE, BSIOpenBankEvent)
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_GUILD_BANK_UPDATED_QUANTITY, BSIOpenBankEvent)
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_GUILD_BANK_ITEMS_READY, BSIOpenBankEvent)
+EVENT_MANAGER:RegisterForEvent(AddonInfo.addon, EVENT_GUILD_BANK_SELECTED, BSIOpenBankEvent)
