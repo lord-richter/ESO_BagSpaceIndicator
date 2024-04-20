@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="BagSpaceIndicator" default="build" basedir=".">
+	
+	<target name="updateversion" depends="copyfiles" description="Update version property in source files">
+		<replace dir="target/${addon.name}" propertyFile="build.properties" summary="true">
+			<include name="**/*"/>
+			<replacefilter token="{addon.version}" property="addon.version" />
+			<replacefilter token="{addon.apiversion}" property="addon.apiversion" />
+		</replace>
+	</target>
+	
+	<target name="copyfiles" description="Copy source files to target directory">
+		<copy todir="target/${addon.name}" verbose="true" overwrite="true" failonerror="true">
+			<fileset dir="src" includes="**"/>
+		</copy>
+	</target>
+	
+	
+    <target name="makezip" depends="build" description="Create a ZIP for the project">
+       <zip destfile="release/${addon.name}-${addon.version}.zip" basedir="target" update="true"/>
+    </target>
+	
+	<target name="build" depends="updateversion" />
+	
+	<target name="release" depends="build,makezip" />
+	
+	<target name="clean">
+		<delete>
+			<fileset dir="target" includes="**/*"/>	
+		</delete>		
+	</target>
+
+</project>
