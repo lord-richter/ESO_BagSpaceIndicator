@@ -3,7 +3,6 @@ luac.out
 
 # luarocks build files
 *.src.rock
-*.zip
 *.tar.gz
 
 # Object files
@@ -39,3 +38,11 @@ luac.out
 *.x86_64
 *.hex
 
+/.project
+/.buildpath
+/.externalToolBuilders/*
+/.settings/*
+/target/*
+/release/*
+private*
+private*/
