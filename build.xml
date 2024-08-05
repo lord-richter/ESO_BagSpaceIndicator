@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="BagSpaceIndicator" default="build" basedir=".">
+	<property file="build.properties"/>
+	<echo message="${addon.name} Version ${addon.version}"/>
 	
 	<target name="updateversion" depends="copyfiles" description="Update version property in source files">
 		<replace dir="target/${addon.name}" propertyFile="build.properties" summary="true">
