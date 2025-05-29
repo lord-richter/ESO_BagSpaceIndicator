@@ -38,7 +38,7 @@ luac.out
 *.x86_64
 *.hex
 
-# Backups and saves
+# Backup and Save files
 *.backup
 *.save
 
