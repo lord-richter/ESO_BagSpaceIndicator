@@ -1,0 +1,13 @@
+## Title: |c0099ffBag Space Indicator|cffffff v{addon.version}|r
+## Author: |c999999{addon.blame}
+## Version: {addon.version}
+## Description: Displays the bank and bag space on the screen
+## SavedVariables: BagSpaceIndicatorVars
+## APIVersion: {addon.apiversion}
+
+{zenimax.boilerplate}
+
+# {addon.name} v{addon.version} {addon.date}
+
+BagSpaceIndicator.lua
+BagSpaceIndicator.xml

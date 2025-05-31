@@ -38,11 +38,17 @@ luac.out
 *.x86_64
 *.hex
 
+# Backup and Save files
+*.backup
+*.save
+
+/.idea
 /.project
 /.buildpath
 /.externalToolBuilders/*
 /.settings/*
 /target/*
+/build/*
 /release/*
 private*
 private*/
