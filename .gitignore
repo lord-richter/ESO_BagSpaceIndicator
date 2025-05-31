@@ -48,6 +48,7 @@ luac.out
 /.externalToolBuilders/*
 /.settings/*
 /target/*
+/build/*
 /release/*
 private*
 private*/
