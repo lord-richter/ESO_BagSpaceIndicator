@@ -5,9 +5,8 @@
 ## SavedVariables: BagSpaceIndicatorVars
 ## APIVersion: {addon.apiversion}
 
-{zenimax.boilerplate}
-
 # {addon.name} v{addon.version} {addon.date}
+{zenimax.boilerplate}
 
 BagSpaceIndicator.lua
 BagSpaceIndicator.xml
