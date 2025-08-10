@@ -15,6 +15,7 @@
 			<replacefilter token="{addon.blame}" property="addon.blame" />
 			<replacefilter token="{addon.date}" property="addon.date" />
             <replacefilter token="{addon.name}" property="addon.name" />
+			<replacefilter token="{addon.website}" property="addon.website" />
             <replacefilter token="{zenimax.boilerplate}" property="zenimax.boilerplate" />
 		</replace>
 	</target>
