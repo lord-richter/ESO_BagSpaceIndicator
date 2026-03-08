@@ -335,6 +335,8 @@ local function InitConfigPanel()
         return
     end
 
+    BSI.configpanel.settings.version = "{addon.version}"
+
     BSI.configpanel.disabled = false;
 
     BSI.configpanel.showWindow = false;
@@ -343,9 +345,9 @@ local function InitConfigPanel()
 
     BSI.configpanel.opacityValue = BSI.savedvariables.backgroundalpha * 100
 
-    BSI.configpanel.locationX = BSI.savedvariables.offsetX
+    BSI.configpanel.locationX = zo_floor(BSI.savedvariables.offsetX)
 
-    BSI.configpanel.locationY = BSI.savedvariables.offsetY
+    BSI.configpanel.locationY = zo_floor(BSI.savedvariables.offsetY)
 
     BSI.configpanel.viewWindow = {
         type = LibHarvensAddonSettings.ST_CHECKBOX,
