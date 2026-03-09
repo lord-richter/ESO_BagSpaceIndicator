@@ -22,7 +22,7 @@
 	
 	<target name="copyfiles" description="Copy source files to target directory">
 		<copy todir="${target}/${addon.name}" verbose="true" overwrite="true" failonerror="true">
-			<fileset dir="${source}" includes="**" excludes="**/*.backup" />
+			<fileset dir="${source}" excludes="**/private.*/**,**/*.backup" />
 		</copy>
 	</target>
 	
